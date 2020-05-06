@@ -101,7 +101,7 @@ public class Main {
 		 * params 5: how many student from file
 		 * params 6: how many iterations
 		 */
-		Optimizer optimization = new Optimizer(file, conflict_matrix, course_sorted, jumlahexam, jumlahmurid, 1000);
+		Optimizer optimization = new Optimizer(file, conflict_matrix, course_sorted, jumlahexam, jumlahmurid, 1000000);
 		/*
 		 * use hill climbing for timesloting
 		 */
