@@ -6,30 +6,76 @@ import java.util.Scanner;
 public class Main {
 
     static String folderDataset = "C:/Users/Lee Ye Chan/Documents/Kuliah/Semester 6/OKH/fpokh/cap2/Toronto/";
-    static String namafile[][] = {	{"car-f-92", "Carleton92"}, {"car-s-91", "Carleton91"}, {"ear-f-83", "EarlHaig83"}, {"hec-s-92", "EdHEC92"}, 
-									{"kfu-s-93", "KingFahd93"}, {"lse-f-91", "LSE91"}, {"pur-s-93", "pur93"}, {"rye-s-93", "rye92"}, {"sta-f-83", "St.Andrews83"},
-									{"tre-s-92", "Trent92"}, {"uta-s-92", "TorontoAS92"}, {"ute-s-92", "TorontoE92"}, {"yor-f-83", "YorkMills83"}
-								};
-    
-    static int timeslot[]; // fill with course & its timeslot
-    static int[][] conflict_matrix, course_sorted, hasil_timeslot;
+    static String fileName[][] = {
+            {"car-f-92", "Carleton92"}, {"car-s-91", "Carleton91"},
+            {"ear-f-83", "EarlHaig83"}, {"hec-s-92", "EdHEC92"}, 
+            {"kfu-s-93", "KingFahd93"}, {"lse-f-91", "LSE91"},
+            {"pur-s-93", "pur93"}, {"rye-s-93", "rye92"},
+            {"sta-f-83", "St.Andrews83"}, {"tre-s-92", "Trent92"}, 
+            {"uta-s-92", "TorontoAS92"}, {"ute-s-92", "TorontoE92"},
+            {"yor-f-83", "YorkMills83"}
+    };
+    static int timeslot[]; 
+    static int[][] conflictMatrix, courseSorted, timeslotResult;
 	
 	private static Scanner scanner;
 	
     public static void main(String[] args) throws IOException {
         scanner = new Scanner(System.in);
-        for	(int i=0; i< namafile.length; i++)
-        	System.out.println(i+1 + ". Penjadwalan " + namafile[i][1]);
+        for	(int i=0; i< fileName.length; i++)
+        	System.out.println(i+1 + ". Penjadwalan " + fileName[i][1]);
         
         System.out.print("\nSilahkan pilih file untuk dijadwalkan : ");
         int pilih = scanner.nextInt();
         
-        String filePilihanInput = namafile[pilih-1][0];
-        String filePilihanOutput = namafile[pilih-1][1];
+        String filePilihanInput = fileName[pilih-1][0];
+        String filePilihanOutput = fileName[pilih-1][1];
         
         String file = folderDataset + filePilihanInput;
+        	
+        Course course = new Course(file);
+        int jumlahexam = course.getNumberOfCourses();
         
-        /*
+        conflictMatrix = course.getConflictMatrix();
+        int jumlahmurid = course.getTotalStudents();
+        
+		courseSorted = course.sortingByDegree(conflictMatrix, jumlahexam);
+		
+		long starttimeLargestDegree = System.nanoTime();
+		Schedule schedule = new Schedule(file, conflictMatrix, jumlahexam);
+		timeslot = schedule.schedulingByDegree(courseSorted);
+		int[][] timeslotByLargestDegree = schedule.getSchedule();
+		long endtimeLargestDegree = System.nanoTime();
+
+		Optimizer optimization = new Optimizer(file, conflictMatrix, courseSorted, jumlahexam, jumlahmurid, 10000);
+
+		long starttimeHC = System.nanoTime();
+		optimization.getTimeslotByHillClimbing();
+		long endtimeHC = System.nanoTime();
+		
+                long starttimeSA = System.nanoTime();
+		optimization.getTimeslotBySimulatedAnnealing(100.0);
+		long endtimeSA = System.nanoTime();
+                
+		System.out.println("PENJADWALAN UNTUK " + filePilihanOutput + "\n");
+		
+		System.out.println("Jumlah Timeslot (menggunakan \"Constructive Heuristics\")     : " + schedule.getTotalTimeslots(schedule.getSchedule()));
+		System.out.println("Penalti \"Constructive Heuristics\"                           : " + Evaluator.getPenalty(conflictMatrix, schedule.getSchedule(), jumlahmurid));
+		System.out.println("Waktu Eksekusi \"Constructive Heuristics\"                    : " + ((double) (endtimeLargestDegree - starttimeLargestDegree)/1000000000) + " detik.\n");
+		
+		System.out.println("Jumlah Timeslot (menggunakan Hill Climbing)                 : " + optimization.getJumlahTimeslotHC());
+		System.out.println("Penalti Hill Climbing                                       : " + Evaluator.getPenalty(conflictMatrix, optimization.getTimeslotHillClimbing(), jumlahmurid));
+		System.out.println("Waktu Eksekusi Hill Climbing                                : " + ((double) (endtimeHC - starttimeHC)/1000000000) + " detik.\n");
+		
+                System.out.println("Jumlah Timeslot (menggunakan Simulated Annealing)           : " + optimization.getJumlahTimeslotSimulatedAnnealing());
+                System.out.println("Penalti Simulated Annealing                                 : " + Evaluator.getPenalty(conflictMatrix, optimization.getTimeslotSimulatedAnnealing(), jumlahmurid));
+                System.out.println("Waktu Eksekusi Simmulated Annealing                         : " + ((double) (endtimeSA - starttimeSA)/1000000000) + " detik.\n");
+		
+    }
+    
+}
+
+/*
          * Scheduling from largest degree (default timesloting)
          */
         /*course = new Course(file);
@@ -72,84 +118,3 @@ public class Main {
 		writeSolFile(hasil_timeslot, filePilihanOutput);
 		System.out.println("Penalti : " + Evaluator.getPenalty(conflict_matrix, hasil_timeslot, jumlahMurid));
 		*/
-		
-        Course course = new Course(file);
-        int jumlahexam = course.getNumberOfCourses();
-        
-        conflict_matrix = course.getConflictMatrix();
-        int jumlahmurid = course.getTotalStudents();
-        
-		// sort exam by degree
-		course_sorted = course.sortingByDegree(conflict_matrix, jumlahexam);
-		
-		// scheduling
-		/*
-		 * Scheduling by largest degree
-		 */
-		
-		long starttimeLargestDegree = System.nanoTime();
-		Schedule schedule = new Schedule(file, conflict_matrix, jumlahexam);
-		timeslot = schedule.schedulingByDegree(course_sorted);
-		int[][] timeslotByLargestDegree = schedule.getSchedule();
-		long endtimeLargestDegree = System.nanoTime();
-		
-		/*
-		 * params 1: file to be scheduling
-		 * params 2: conflict matrix from file
-		 * params 3: sort course by degree
-		 * params 4: how many course from file
-		 * params 5: how many student from file
-		 * params 6: how many iterations
-		 */
-		Optimizer optimization = new Optimizer(file, conflict_matrix, course_sorted, jumlahexam, jumlahmurid, 1000000);
-		/*
-		 * use hill climbing for timesloting
-		 */
-		long starttimeHC = System.nanoTime();
-		optimization.getTimeslotByHillClimbing(); // use hillclimbing methode for iterates 1000000 times
-		long endtimeHC = System.nanoTime();
-		
-		System.out.println("PENJADWALAN UNTUK " + filePilihanOutput + "\n");
-		
-		System.out.println("Timeslot dibutuhkan (menggunakan \"Constructive Heuristics\") 	: " + schedule.getTotalTimeslots(schedule.getSchedule()));
-		System.out.println("Penalti \"Constructive Heuristics\" 				: " + Evaluator.getPenalty(conflict_matrix, schedule.getSchedule(), jumlahmurid));
-		System.out.println("Waktu eksekusi yang dibutuhkan \"Constructive Heuristics\" " + ((double) (endtimeLargestDegree - starttimeLargestDegree)/1000000000) + " detik.\n");
-		
-		System.out.println("Timeslot dibutuhkan (menggunakan Hill Climbing) 		: " + optimization.getJumlahTimeslotHC());
-		System.out.println("Penalti Hill Climbing 						: " + Evaluator.getPenalty(conflict_matrix, optimization.getTimeslotHillClimbing(), jumlahmurid));
-		System.out.println("Waktu eksekusi yang dibutuhkan Hill Climbing " + ((double) (endtimeHC - starttimeHC)/1000000000) + " detik.\n");
-		
-//		double[] penaltyList = optimization.getTabuSearchPenaltyList();
-//		hasil_timeslot = optimization.getTimeslotHillClimbing();
-//		hasil_timeslot = optimization.getTimeslotSimulatedAnnealing();
-//		writePenaltyListFile(penaltyList, filePilihanOutput);
-    }
-    
-    public static void writeSolFile(int[][] hasiltimeslot, String namaFileOutput) throws IOException {
-    	String directoryOutput = "C:/Users/ZAP/Google Drive/KULIAH/OKH/Tugas/UAS/ExamTimetableEvaluation/" + namaFileOutput +".sol";
-        FileWriter writer = new FileWriter(directoryOutput, true);
-        for (int i = 0; i < hasiltimeslot.length; i++) {
-            for (int j = 0; j < hasiltimeslot[i].length; j++) {
-                  writer.write(hasiltimeslot[i][j]+ " ");
-            }
-            writer.write("\n");
-        }
-        writer.close();
-        
-		System.out.println("\nFile penjadwalan " + namaFileOutput+ " berhasil dibuat");
-	}
-    
-    public static void writePenaltyListFile(double[] penaltyList, String namaFileOutput) throws IOException {
-    	String directoryOutput = "C:/Users/ZAP/Google Drive/KULIAH/OKH/Tugas/UAS/" + namaFileOutput +".txt";
-        FileWriter writer = new FileWriter(directoryOutput, true);
-        
-        for (int j = 0; j < penaltyList.length; j++) {
-            writer.write(penaltyList[j]+ " ");
-            writer.write("\n");
-//        	System.out.println(penaltyList[j]);
-        }
-        writer.close();
-        
-		System.out.println("\nFile list penalty " + namaFileOutput+ " berhasil dibuat");
-	}
-}
