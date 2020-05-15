@@ -47,7 +47,7 @@ public class Main {
 		int[][] timeslotByLargestDegree = schedule.getSchedule();
 		long endtimeLargestDegree = System.nanoTime();
 
-		Optimizer optimization = new Optimizer(file, conflictMatrix, courseSorted, jumlahexam, jumlahmurid, 10000);
+		Optimizer optimization = new Optimizer(file, conflictMatrix, courseSorted, jumlahexam, jumlahmurid, 1000);
 
 		long starttimeHC = System.nanoTime();
 		optimization.getTimeslotByHillClimbing();
